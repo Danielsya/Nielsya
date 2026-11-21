@@ -1,4 +1,4 @@
-// Sunport City — Make.Fun gta6-01 entry, written fresh by the recorded agent.
+// Sunport City v2 — Make.Fun gta6-01 entry, 3D build, written fresh by the recorded agent.
 // Node 22, standard library only: copy game/ and screenshots/ to /output and
 // write /output/dossier.json with the vendored make.fun library.
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,7 @@ cpSync(join(here, 'game'), join(out, 'game'), { recursive: true });
 mkdirSync(join(out, 'screenshots'), { recursive: true });
 if (existsSync(join(here, 'screenshots'))) cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
 
-// Sunport City: a complete open-world crime game in Sunport City, built from scratch.
+// Sunport City v2: a 3D low-poly open-world crime game in Sunport City, built from scratch with three.js vendored locally.
 writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, {

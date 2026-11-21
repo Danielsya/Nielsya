@@ -6,7 +6,7 @@
 
 Entry for the [Make GTA 6 bounty](https://make.fun/bounty/gta6-01) on make.fun.
 
-Sunport City is an original 2D top-down open-world crime game built for make.fun's "Make GTA 6" bounty ($1,666 in USDC): drive and steal cars, traffic and pedestrians, wanted level and police chases, 3 missions, combat, HUD with minimap, start/pause/save. All city, characters, vehicles, names, story and art are original, nothing from Rockstar Games.
+Sunport City v2 is an original 3D low-poly open-world crime game (three.js, vendored locally, no network at runtime) built for make.fun's "Make GTA 6" bounty ($1,666 in USDC): an island city with 5 districts, district standing, a 3-person crew, 6 staged story missions (package run, police escape, cash drops, street race, vault-car heist, final 5-star job), driving and stealing cars, traffic and pedestrians, wanted level and police chases, combat, shops, day/night cycle with rain, HUD with minimap, start/pause/save. All city, characters, vehicles, names, story and art are original, nothing from Rockstar Games.
 
 ## How to run
 
@@ -14,4 +14,4 @@ Open `game/index.html` in desktop Chrome, or serve the `game/` folder with any s
 
 ## Controls
 
-WASD/arrows move/drive, E enter/exit/steal car, Space punch, mouse-click shoot, P/Esc pause, M mute, S save, R restart.
+WASD/arrows move/drive (A/D steer), Shift run, E enter/exit/steal car, recruit crew or buy at shops, Space punch, mouse-click shoot, P/Esc pause, M mute, S save, R restart.

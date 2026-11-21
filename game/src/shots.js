@@ -1,11 +1,8 @@
-// Shot setups for screenshots. Written fresh.
-// ?shot=start -> title screen over the city
-// ?shot=play  -> LIVE driving chase: player in a car, police chasing,
-//               wanted 3, mission 1 active, health full, NO BUSTED.
-//               Shot mode is invulnerable: health loss and arrest are
-//               disabled while shotMode is true, so the render can never
-//               flip to game-over.
-// ?shot=end   -> mission-complete screen over the city
+// Sunport City v2 (3D) — shot setups for screenshots. Written fresh.
+// ?shot=start -> title screen over the 3D city
+// ?shot=play  -> LIVE 3D driving chase: player car, police behind, wanted 3,
+//               mission active, HUD + minimap, invulnerable, never BUSTED.
+// ?shot=end   -> mission-complete screen over the 3D city
 import { MISSIONS } from './config.js';
 export function getShotFromURL() {
   try { const q = new URLSearchParams(location.search); return q.get('shot') || null; } catch { return null; }
@@ -16,16 +13,18 @@ export function applyShot(state, shot) {
   state.shotMode = true;
   state.invulnerable = true;
   if (shot === 'start') {
-    state.mode = 'title';
-    state.wanted = 0;
-    state.player.health = 100;
+    state.mode = 'title'; state.wanted = 0; state.player.health = 100;
+    state.player.money = 100; state.dayClock = 10;
+    state.player.x = 36 * 32 + 16; state.player.z = 36 * 32 + 16; state.player.angle = 0.6;
+    state.player.inCar = false; state.police = []; state.missionIndex = 0; state.mission = MISSIONS[0];
     return;
   }
   if (shot === 'end') {
-    state.mode = 'complete';
-    state.wanted = 0;
-    state.player.health = 100;
-    state.player.money += 500;
+    state.mode = 'complete'; state.wanted = 0; state.player.health = 100;
+    state.player.money = 2300; state.dayClock = 10;
+    state.missionIndex = 5; state.mission = MISSIONS[5];
+    state.player.x = 36 * 32 + 16; state.player.z = 36 * 32 + 16; state.player.angle = 0.6;
+    state.player.inCar = false; state.police = [];
     return;
   }
   // play: live chase, never game-over
@@ -38,30 +37,23 @@ export function applyShot(state, shot) {
   state.player.ammo = 30;
   state.player.money = 250;
   state.player.inCar = true;
-  state.player.speed = 6;
+  state.player.speed = 200;
   state.player.angle = 0;
-  // Put the player car on a horizontal road, centre of the view.
   state.player.x = 16 * 32 + 16;
-  state.player.y = 16 * 32 + 16;
-  // Mission target ahead, to the east on the same road.
-  state.missionTarget = { x: 40 * 32 + 16, y: 16 * 32 + 16 };
-  // 3 police cars chasing behind (west), on the same road.
+  state.player.z = 16 * 32 + 16;
+  state.missionTarget = { x: 40 * 32 + 16, z: 16 * 32 + 16 };
   state.police = [
-    { x: state.player.x - 90, y: state.player.y - 10, angle: 0, speed: 6.2 },
-    { x: state.player.x - 150, y: state.player.y + 12, angle: 0, speed: 6.0 },
-    { x: state.player.x - 210, y: state.player.y - 6, angle: 0, speed: 5.8 },
+    { x: state.player.x - 110, z: state.player.z - 14, angle: 0, speed: 210, mesh: null },
+    { x: state.player.x - 180, z: state.player.z + 16, angle: 0, speed: 205, mesh: null },
+    { x: state.player.x - 250, z: state.player.z - 8, angle: 0, speed: 200, mesh: null },
   ];
-  // Traffic ahead and around, on roads, not colliding with the player.
   state.traffic = [
-    { x: state.player.x + 260, y: state.player.y, angle: 0, speed: 3, color: '#e05a4d' },
-    { x: state.player.x + 420, y: 8 * 32 + 16, angle: 0, speed: 3, color: '#4dd0a5' },
-    { x: 24 * 32 + 16, y: 8 * 32 + 16, angle: 0, speed: 3, color: '#c96fd1' },
-    { x: state.player.x - 320, y: 24 * 32 + 16, angle: 0, speed: 3, color: '#e05a4d' },
+    { x: state.player.x + 320, z: state.player.z, angle: 0, speed: 90, color: 0xe05a4d, mesh: null },
+    { x: state.player.x + 520, z: 8 * 32 + 16, angle: 0, speed: 90, color: 0x4dd0a5, mesh: null },
+    { x: 24 * 32 + 16, z: 8 * 32 + 16, angle: 0, speed: 90, color: 0xc96fd1, mesh: null },
   ];
   state.peds = [
-    { x: state.player.x + 120, y: state.player.y + 48 },
-    { x: state.player.x + 200, y: state.player.y - 48 },
-    { x: state.player.x - 60, y: state.player.y + 64 },
+    { x: state.player.x + 150, z: state.player.z + 60, mesh: null },
+    { x: state.player.x + 260, z: state.player.z - 60, mesh: null },
   ];
-  state.cam = { x: state.player.x - 640, y: state.player.y - 360 };
 }

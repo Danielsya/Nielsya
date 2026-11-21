@@ -1,4 +1,4 @@
-// Keyboard + mouse tracker. Written fresh.
+// Sunport City v2 (3D) — keyboard + mouse tracker. Written fresh.
 export class Input {
   constructor(canvas) {
     this.keys = {};
@@ -17,6 +17,7 @@ export class Input {
     });
     canvas.addEventListener('mousedown', (e) => { this.mouse.down = true; this.mouse.clicked = true; });
     addEventListener('mouseup', () => { this.mouse.down = false; });
+    canvas.addEventListener('touchstart', (e) => { this.mouse.clicked = true; e.preventDefault(); }, { passive: false });
   }
   down(k) { return !!this.keys[k.toLowerCase()]; }
   pressed(k) { const v = !!this._pressed[k.toLowerCase()]; this._pressed[k.toLowerCase()] = false; return v; }
