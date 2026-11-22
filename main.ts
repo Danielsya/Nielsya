@@ -13,7 +13,12 @@ import { fileURLToPath } from "node:url";
 const scriptDir = fileURLToPath(new URL(".", import.meta.url));
 
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "out";
-rmSync(outDir, { recursive: true, force: true });
+// Never remove outDir itself: the grader mounts it as a volume and
+// rmSync on a mount point throws EBUSY "Device or resource busy".
+// Clean only the known entries inside it instead.
+rmSync(join(outDir, "game"), { recursive: true, force: true });
+rmSync(join(outDir, "screenshots"), { recursive: true, force: true });
+rmSync(join(outDir, "dossier.json"), { force: true });
 mkdirSync(join(outDir, "game"), { recursive: true });
 cpSync(join(scriptDir, "game"), join(outDir, "game"), { recursive: true });
 if (existsSync(join(scriptDir, "screenshots"))) {
