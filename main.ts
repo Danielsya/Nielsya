@@ -5,13 +5,19 @@
 import { buildDossier } from "./vendor/makefun-game.ts";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The grader runs `node /bot/main.ts` from a working directory that is not
+// the repo dir, so resolve game/ and screenshots/ relative to this script
+// file, not the current working directory.
+const scriptDir = fileURLToPath(new URL(".", import.meta.url));
 
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "out";
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(join(outDir, "game"), { recursive: true });
-cpSync("game", join(outDir, "game"), { recursive: true });
-if (existsSync("screenshots")) {
-  cpSync("screenshots", join(outDir, "screenshots"), { recursive: true });
+cpSync(join(scriptDir, "game"), join(outDir, "game"), { recursive: true });
+if (existsSync(join(scriptDir, "screenshots"))) {
+  cpSync(join(scriptDir, "screenshots"), join(outDir, "screenshots"), { recursive: true });
 }
 
 // Caps the grader enforces for a game entry: text files, single files,
