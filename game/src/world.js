@@ -1,92 +1,171 @@
-// Sunport City v2 (3D) — island city data on the XZ plane (y is up in 3D). Written fresh.
-import { mulberry32, pick, randRange } from './random.js';
-import { CONFIG, DISTRICTS } from './config.js';
+// World generation for Cinderport: tile map, districts, buildings and places.
+// Deterministic from a fixed seed so every run builds the same island.
+import { TILE, MAP, DISTRICTS } from "./config.js";
+import { makeRng } from "./random.js";
 
-export function districtAt(px, pz) {
-  const tx = Math.floor(px / CONFIG.tile), ty = Math.floor(pz / CONFIG.tile);
-  for (const d of DISTRICTS) if (tx >= d.x0 && tx < d.x1 && ty >= d.y0 && ty < d.y1) return d;
-  return DISTRICTS[0];
+export const TILE_ROAD = 1;
+export const TILE_BLOCK = 0;
+export const TILE_WATER = 2;
+export const TILE_PARK = 3;
+export const TILE_BEACH = 4;
+
+const VOLCANO = { tx: 36, tz: 10, r: 7 };
+
+export function districtAt(tx, tz) {
+  // North: Observatory Heights around the volcano. North-east: Neon Strip.
+  // East: Harborlight Wharf. West-center: Lavaflow Row. South: Blacksand Shore.
+  if (tz >= 58) return 4;
+  if (tz < 20 && tx >= 24 && tx < 48) return 0;
+  if (tz < 34 && tx >= 48) return 1;
+  if (tx >= 56) return 2;
+  if (tx < 24 && tz >= 24 && tz < 58) return 3;
+  if (tz < 20) return 0;
+  return 2;
 }
 
-export function createWorld(seed) {
-  const rng = mulberry32(seed || 1);
-  const size = CONFIG.worldTiles;
-  const tiles = [];
-  for (let y = 0; y < size; y++) {
-    const row = [];
-    for (let x = 0; x < size; x++) {
-      const onRoadX = x % CONFIG.roadEvery === 0;
-      const onRoadY = y % CONFIG.roadEvery === 0;
-      let t = 'block';
-      if (onRoadX || onRoadY) t = 'road';
-      else if (x >= 60 && y < 12) t = 'water';
-      else if (y >= 64) t = 'sand';
-      else if ((x + y) % 13 === 0) t = 'park';
-      row.push(t);
-    }
-    tiles.push(row);
-  }
-  const palettes = {
-    downtown: [0x7a6a8a, 0x5f708f, 0x8a7f6a, 0x6a8a7f],
-    marina: [0x4a6a8a, 0x6a7a8a, 0x8a6a5a],
-    oldtown: [0x9e8a6f, 0x8a7a5a, 0xa08a6a],
-    hills: [0x7f9e8a, 0x8a9e7f, 0x6f8a9e],
-    beach: [0xd8c8a0, 0xc8b890, 0xe0d0a8],
+export function buildWorld(seed = 1337) {
+  const rng = makeRng(seed);
+  const tiles = new Uint8Array(MAP * MAP);
+  const at = (tx, tz) => tiles[tz * MAP + tx];
+  const set = (tx, tz, v) => {
+    if (tx >= 0 && tx < MAP && tz >= 0 && tz < MAP) tiles[tz * MAP + tx] = v;
   };
-  const buildings = [];
-  for (let y = 2; y < size - 2; y += 4) {
-    for (let x = 2; x < size - 2; x += 4) {
-      if (tiles[y][x] === 'block' && rng() < 0.68) {
-        const d = districtAt(x * CONFIG.tile, y * CONFIG.tile);
-        const tall = d.id === 'downtown' && rng() < 0.5;
-        buildings.push({
-          x, y, w: 3, h: 3,
-          cx: x * CONFIG.tile + 1.5 * CONFIG.tile,
-          cz: y * CONFIG.tile + 1.5 * CONFIG.tile,
-          height: tall ? randRange(rng, 90, 220) : randRange(rng, 18, 60),
-          c: pick(rng, palettes[d.id] || palettes.downtown),
-          district: d.id, tall,
-        });
+
+  // Base: blocks, roads every 6 tiles, water south, beach strip above it.
+  for (let tz = 0; tz < MAP; tz++) {
+    for (let tx = 0; tx < MAP; tx++) {
+      if (tz >= 66) set(tx, tz, TILE_WATER);
+      else if (tz >= 62) set(tx, tz, TILE_BEACH);
+      else if (tx % 6 === 0 || tz % 6 === 0) set(tx, tz, TILE_ROAD);
+      else set(tx, tz, TILE_BLOCK);
+    }
+  }
+  // Harbor inlet on the east edge.
+  for (let tz = 36; tz < 52; tz++) {
+    for (let tx = 68; tx < MAP; tx++) set(tx, tz, TILE_WATER);
+  }
+  // Volcano crater: rock, no roads or buildings.
+  for (let tz = 0; tz < MAP; tz++) {
+    for (let tx = 0; tx < MAP; tx++) {
+      const dx = tx - VOLCANO.tx;
+      const dz = tz - VOLCANO.tz;
+      if (dx * dx + dz * dz < VOLCANO.r * VOLCANO.r) set(tx, tz, TILE_BLOCK);
+    }
+  }
+  // Parks: a few green blocks.
+  const parks = [
+    [12, 12], [30, 30], [48, 48], [18, 42], [54, 18],
+  ];
+  for (const [px, pz] of parks) {
+    for (let tz = pz; tz < pz + 3; tz++) {
+      for (let tx = px; tx < px + 3; tx++) {
+        if (at(tx, tz) === TILE_BLOCK) set(tx, tz, TILE_PARK);
       }
     }
   }
-  const shops = [
-    { x: 24 * 32 + 16, z: 32 * 32 + 16, name: 'Ammo & Meds — Downtown' },
-    { x: 8 * 32 + 16, z: 40 * 32 + 16, name: 'Ammo & Meds — Old Town' },
-    { x: 48 * 32 + 16, z: 56 * 32 + 16, name: 'Ammo & Meds — Beach' },
-  ];
-  const hideout = { x: 8 * 32 + 16, z: 32 * 32 + 16, name: 'Hideout' };
-  const raceStart = { x: 8 * 32 + 16, z: 56 * 32 + 16 };
-  const raceChecks = [
-    { x: 24 * 32 + 16, z: 56 * 32 + 16 }, { x: 40 * 32 + 16, z: 64 * 32 + 16 },
-    { x: 56 * 32 + 16, z: 56 * 32 + 16 }, { x: 64 * 32 + 16, z: 64 * 32 + 16 },
-  ];
-  const crewSpots = [
-    { x: 32 * 32 + 16, z: 32 * 32 + 16, crew: 'driver' },
-    { x: 16 * 32 + 16, z: 40 * 32 + 16, crew: 'hacker' },
-    { x: 40 * 32 + 16, z: 16 * 32 + 16, crew: 'muscle' },
-  ];
-  const vaultCar = { x: 40 * 32 + 16, z: 8 * 32 + 16 };
-  return { size, tiles, buildings, shops, hideout, raceStart, raceChecks, crewSpots, vaultCar, rng };
-}
-export function isRoad(world, tx, ty) {
-  if (tx < 0 || ty < 0 || tx >= world.size || ty >= world.size) return false;
-  return world.tiles[ty][tx] === 'road';
-}
-export function isBlocked(world, px, pz) {
-  const tx = Math.floor(px / CONFIG.tile), ty = Math.floor(pz / CONFIG.tile);
-  if (tx < 0 || ty < 0 || tx >= world.size || ty >= world.size) return true;
-  if (world.tiles[ty][tx] === 'water') return true;
-  for (const b of world.buildings) {
-    if (tx >= b.x && tx < b.x + b.w && ty >= b.y && ty < b.y + b.h) return true;
+
+  const tileCenter = (tx, tz) => ({ x: (tx + 0.5) * TILE, z: (tz + 0.5) * TILE });
+  const buildings = [];
+  const trees = [];
+  const lamps = [];
+
+  for (let tz = 1; tz < MAP - 1; tz++) {
+    for (let tx = 1; tx < MAP - 1; tx++) {
+      const t = at(tx, tz);
+      const d = districtAt(tx, tz);
+      if (t === TILE_PARK && rng.chance(0.5)) {
+        const c = tileCenter(tx, tz);
+        trees.push({ x: c.x + rng.range(-3, 3), z: c.z + rng.range(-3, 3), s: rng.range(0.8, 1.4) });
+      }
+      if (t === TILE_ROAD) {
+        if ((tx % 6 === 0 && tz % 3 === 0) || (tz % 6 === 0 && tx % 3 === 0)) {
+          const c = tileCenter(tx, tz);
+          lamps.push({ x: c.x + 4, z: c.z + 4 });
+        }
+        continue;
+      }
+      if (t !== TILE_BLOCK) continue;
+      // Skip the volcano cone itself.
+      const dx = tx - VOLCANO.tx;
+      const dz = tz - VOLCANO.tz;
+      if (dx * dx + dz * dz < (VOLCANO.r + 1) * (VOLCANO.r + 1)) continue;
+      if (rng.chance(0.62)) {
+        const c = tileCenter(tx, tz);
+        let h = rng.range(6, 16);
+        if (d === 1) h = rng.range(18, 46); // neon towers
+        if (d === 0) h = rng.range(5, 12); // villas
+        if (d === 2) h = rng.range(4, 9); // wharf shacks
+        if (d === 3) h = rng.range(5, 14);
+        buildings.push({
+          x: c.x, z: c.z, w: TILE * rng.range(0.6, 0.9), d: TILE * rng.range(0.6, 0.9),
+          h, district: d, rot: rng.chance(0.5) ? 0 : Math.PI / 2,
+          hue: rng.range(0, 1),
+        });
+      } else if (rng.chance(0.25)) {
+        const c = tileCenter(tx, tz);
+        trees.push({ x: c.x, z: c.z, s: rng.range(0.8, 1.3) });
+      }
+    }
   }
-  return false;
+
+  const T = (tx, tz) => tileCenter(tx, tz);
+  const hideoutC = T(10, 44);
+  const casinoC = T(58, 14);
+  const observatoryC = T(36, 8);
+
+  const world = {
+    seed, tiles, buildings, trees, lamps,
+    volcano: { x: (VOLCANO.tx + 0.5) * TILE, z: (VOLCANO.tz + 0.5) * TILE, r: VOLCANO.r * TILE },
+    hideout: { x: hideoutC.x, z: hideoutC.z },
+    casino: { x: casinoC.x, z: casinoC.z },
+    observatory: { x: observatoryC.x, z: observatoryC.z },
+    spawn: { x: T(36, 40).x, z: T(36, 40).z, angle: 0 },
+    shops: [
+      { x: T(30, 24).x, z: T(30, 24).z, name: "Ammo & Meds" },
+      { x: T(54, 30).x, z: T(54, 30).z, name: "Harbor Supplies" },
+      { x: T(18, 54).x, z: T(18, 54).z, name: "Lava Mart" },
+    ],
+    crewSpots: [
+      { x: T(60, 20).x, z: T(60, 20).z, crew: 0 },
+      { x: T(62, 44).x, z: T(62, 44).z, crew: 1 },
+      { x: T(12, 36).x, z: T(12, 36).z, crew: 2 },
+    ],
+    crates: { x: T(62, 42).x, z: T(62, 42).z },
+    cashDrops: [
+      T(20, 63), T(32, 64), T(44, 63), T(52, 64), T(62, 62),
+    ].map((p) => ({ x: p.x, z: p.z, taken: false })),
+    vaultCar: { x: casinoC.x + 14, z: casinoC.z + 6 },
+    raceRings: [T(54, 12), T(60, 30), T(48, 48), T(30, 54)].map((p) => ({ x: p.x, z: p.z })),
+    isRoad(tx, tz) {
+      if (tx < 0 || tx >= MAP || tz < 0 || tz >= MAP) return false;
+      return tiles[tz * MAP + tx] === TILE_ROAD;
+    },
+    isWater(tx, tz) {
+      if (tx < 0 || tx >= MAP || tz < 0 || tz >= MAP) return true;
+      return tiles[tz * MAP + tx] === TILE_WATER;
+    },
+    tileAt(x, z) {
+      const tx = Math.floor(x / TILE);
+      const tz = Math.floor(z / TILE);
+      if (tx < 0 || tx >= MAP || tz < 0 || tz >= MAP) return TILE_WATER;
+      return tiles[tz * MAP + tx];
+    },
+    districtAtWorld(x, z) {
+      const tx = Math.floor(x / TILE);
+      const tz = Math.floor(z / TILE);
+      return districtAt(Math.max(0, Math.min(MAP - 1, tx)), Math.max(0, Math.min(MAP - 1, tz)));
+    },
+    // Circle vs building AABB test for collisions.
+    hitsBuilding(x, z, r) {
+      for (const b of buildings) {
+        const hw = b.w / 2 + r;
+        const hd = b.d / 2 + r;
+        if (Math.abs(x - b.x) < hw && Math.abs(z - b.z) < hd) return b;
+      }
+      return null;
+    },
+  };
+  return world;
 }
-export function randomRoadPoint(world, rng) {
-  const roadXs = [], roadYs = [];
-  for (let i = 0; i < world.size; i += CONFIG.roadEvery) { roadXs.push(i); roadYs.push(i); }
-  const x = pick(rng, roadXs) * CONFIG.tile + CONFIG.tile / 2;
-  const z = pick(rng, roadYs) * CONFIG.tile + CONFIG.tile / 2;
-  return { x, z };
-}
-export function roadPointAt(world, tx, ty) { return { x: tx * CONFIG.tile + CONFIG.tile / 2, z: ty * CONFIG.tile + CONFIG.tile / 2 }; }
+
+export { DISTRICTS };

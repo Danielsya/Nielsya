@@ -1,59 +1,70 @@
-// Sunport City v2 (3D) — shot setups for screenshots. Written fresh.
-// ?shot=start -> title screen over the 3D city
-// ?shot=play  -> LIVE 3D driving chase: player car, police behind, wanted 3,
-//               mission active, HUD + minimap, invulnerable, never BUSTED.
-// ?shot=end   -> mission-complete screen over the 3D city
-import { MISSIONS } from './config.js';
-export function getShotFromURL() {
-  try { const q = new URLSearchParams(location.search); return q.get('shot') || null; } catch { return null; }
+// Screenshot modes for Cinderport (?shot=start|play|end).
+// These set up deterministic, good-looking states for the entry's captures.
+import { MISSIONS } from "./config.js";
+
+export function applyShot(s, shot, world) {
+  if (shot === "start") {
+    s.mode = "title";
+    s.dayClock = 40; // bright morning
+    s.wanted = 0;
+    s.money = 100;
+    s.player.x = world.spawn.x;
+    s.player.z = world.spawn.z;
+    s.player.angle = 0.6;
+    s.player.inCar = false;
+    s.police = [];
+    s.missionIndex = 0;
+    s.missionText = MISSIONS[0].hint;
+    s.target = null;
+    s.orbit = true;
+  } else if (shot === "end") {
+    s.mode = "complete";
+    s.dayClock = 40;
+    s.missionIndex = 5;
+    s.money = 2300;
+    s.wanted = 0;
+    s.player.x = world.observatory.x + 20;
+    s.player.z = world.observatory.z + 20;
+    s.player.angle = 2.4;
+    s.police = [];
+    s.target = null;
+    s.orbit = true;
+  } else if (shot === "play") {
+    // Live chase: player driving, wanted 3, police behind, job 1 active.
+    s.mode = "playing";
+    s.dayClock = 40;
+    s.missionIndex = 0;
+    s.missionStage = 1;
+    s.missionTimer = 120;
+    s.missionText = MISSIONS[0].hint;
+    s.wanted = 3;
+    s.money = 250;
+    s.health = 100;
+    s.ammo = 30;
+    s.invulnerable = true;
+    // Drive along the road at tz=36 (z=365, road centre) so the camera
+    // behind the car stays on the road, not inside a building block.
+    s.player.x = 24 * 10;
+    s.player.z = 36 * 10 + 5;
+    s.player.angle = Math.PI / 2;
+    s.player.inCar = true;
+    s.player.speed = 16;
+    s.target = { x: world.casino.x, z: world.casino.z };
+    s.police = [
+      { x: s.player.x - 10, z: s.player.z - 4, angle: Math.PI / 2, speed: 15 },
+      { x: s.player.x - 14, z: s.player.z, angle: Math.PI / 2, speed: 15 },
+      { x: s.player.x - 18, z: s.player.z + 4, angle: Math.PI / 2, speed: 14 },
+    ];
+    s.orbit = false;
+  }
+  return s;
 }
-export function applyShot(state, shot) {
-  if (!shot) return;
-  state.shot = shot;
-  state.shotMode = true;
-  state.invulnerable = true;
-  if (shot === 'start') {
-    state.mode = 'title'; state.wanted = 0; state.player.health = 100;
-    state.player.money = 100; state.dayClock = 10;
-    state.player.x = 36 * 32 + 16; state.player.z = 36 * 32 + 16; state.player.angle = 0.6;
-    state.player.inCar = false; state.police = []; state.missionIndex = 0; state.mission = MISSIONS[0];
-    return;
+
+export function shotFromUrl() {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    return q.get("shot");
+  } catch (e) {
+    return null;
   }
-  if (shot === 'end') {
-    state.mode = 'complete'; state.wanted = 0; state.player.health = 100;
-    state.player.money = 2300; state.dayClock = 10;
-    state.missionIndex = 5; state.mission = MISSIONS[5];
-    state.player.x = 36 * 32 + 16; state.player.z = 36 * 32 + 16; state.player.angle = 0.6;
-    state.player.inCar = false; state.police = [];
-    return;
-  }
-  // play: live chase, never game-over
-  state.mode = 'playing';
-  state.wanted = 3;
-  state.missionIndex = 0;
-  state.mission = MISSIONS[0];
-  state.missionTime = MISSIONS[0].time;
-  state.player.health = 100;
-  state.player.ammo = 30;
-  state.player.money = 250;
-  state.player.inCar = true;
-  state.player.speed = 200;
-  state.player.angle = 0;
-  state.player.x = 16 * 32 + 16;
-  state.player.z = 16 * 32 + 16;
-  state.missionTarget = { x: 40 * 32 + 16, z: 16 * 32 + 16 };
-  state.police = [
-    { x: state.player.x - 110, z: state.player.z - 14, angle: 0, speed: 210, mesh: null },
-    { x: state.player.x - 180, z: state.player.z + 16, angle: 0, speed: 205, mesh: null },
-    { x: state.player.x - 250, z: state.player.z - 8, angle: 0, speed: 200, mesh: null },
-  ];
-  state.traffic = [
-    { x: state.player.x + 320, z: state.player.z, angle: 0, speed: 90, color: 0xe05a4d, mesh: null },
-    { x: state.player.x + 520, z: 8 * 32 + 16, angle: 0, speed: 90, color: 0x4dd0a5, mesh: null },
-    { x: 24 * 32 + 16, z: 8 * 32 + 16, angle: 0, speed: 90, color: 0xc96fd1, mesh: null },
-  ];
-  state.peds = [
-    { x: state.player.x + 150, z: state.player.z + 60, mesh: null },
-    { x: state.player.x + 260, z: state.player.z - 60, mesh: null },
-  ];
 }

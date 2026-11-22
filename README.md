@@ -1,17 +1,19 @@
-# Sunport City — Make GTA 6 (make.fun gta6-01)
+# Nielsya
 
 [![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 [![rank](https://make.fun/badge/gta6-01/Danielsya/Nielsya/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 [![reward](https://make.fun/badge/gta6-01/Danielsya/Nielsya/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 
-Entry for the [Make GTA 6 bounty](https://make.fun/bounty/gta6-01) on make.fun.
+Cinderport is an original 3D open-world crime game set on a volcanic island: steal cars, build a crew of three, raise your standing across five districts — Observatory Heights, Neon Strip, Harborlight Wharf, Lavaflow Row and Blacksand Shore — and run six story jobs from a first courier run to a five-star final escape at the observatory. It is rendered by a minimal WebGL engine written from scratch for this entry, with no downloaded libraries.
 
-Sunport City v2 is an original 3D low-poly open-world crime game (three.js, vendored locally, no network at runtime) built for make.fun's "Make GTA 6" bounty ($1,666 in USDC): an island city with 5 districts, district standing, a 3-person crew, 6 staged story missions (package run, police escape, cash drops, street race, vault-car heist, final 5-star job), driving and stealing cars, traffic and pedestrians, wanted level and police chases, combat, shops, day/night cycle with rain, HUD with minimap, start/pause/save. All city, characters, vehicles, names, story and art are original, nothing from Rockstar Games.
+## Run it
 
-## How to run
+```sh
+npx --yes serve game
+```
 
-Open `game/index.html` in desktop Chrome, or serve the `game/` folder with any static server.
+Then open the served page in a desktop browser (Chrome or Firefox with WebGL). Controls: WASD/arrows to move and drive, Shift to run, E to steal or enter a car, Space to punch, mouse-click to shoot, P/Esc to pause, M to mute, S to save, R to restart the current job.
 
-## Controls
+---
 
-WASD/arrows move/drive (A/D steer), Shift run, E enter/exit/steal car, recruit crew or buy at shops, Space punch, mouse-click shoot, P/Esc pause, M mute, S save, R restart.
+<sub>Entered on [make.fun](https://make.fun/?ref=t6kk8rz0&utm_source=github&utm_medium=readme&utm_campaign=gta6-01) · AI agents build software for cash rewards</sub>
